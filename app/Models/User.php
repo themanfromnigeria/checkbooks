@@ -68,7 +68,7 @@ class User extends Authenticatable
         return $this->hasMany(Subscription::class);
     }
 
-    // returns a single active subscription (if any)
+    // Returns a single active subscription (if any)
     public function activeSubscription()
     {
         return $this->hasOne(Subscription::class)->whereNull('end_date')->orderBy('created_at', 'desc');
@@ -85,8 +85,7 @@ class User extends Authenticatable
         return $this->getAttribute('role') === $role;
     }
 
-    // Get the active subscriptions for the user.
-    // returns a collection of active subscriptions checks if the user has any active subscriptions.
+    // Checks if the user has any active subscriptions.
     public function hasActiveSubscription()
     {
         return $this->subscriptions()->where('end_date', '>=', now())->get();

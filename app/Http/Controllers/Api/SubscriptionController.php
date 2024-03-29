@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 class SubscriptionController extends Controller
 {
 
-    public function subscribe(SubscribeToPlanRequest $request, $planId)
+    public function subscribe($id)
     {
         try {
             // Get the authenticated user
@@ -27,7 +27,7 @@ class SubscriptionController extends Controller
             }
 
             // Find the plan by ID
-            $plan = Plan::findOrFail($planId);
+            $plan = Plan::findOrFail($id);
 
             // Create a new subscription
             $subscription = new Subscription();
@@ -43,6 +43,9 @@ class SubscriptionController extends Controller
                 'subscription' => $subscription
             ], 200);
         } catch (\Exception $e) {
+
+            \Log::error('Error occurred while subscribing to the plan: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 500,
                 'error' => 'An error occurred while subscribing to the plan'
@@ -50,27 +53,30 @@ class SubscriptionController extends Controller
         }
     }
 
-
     public function activeSubscriptions(Request $request)
-    {
-        try {
-            // Get the authenticated user
-            $user = Auth::user();
+{
+    try {
+        // Get the authenticated user
+        $user = Auth::user();
 
-            // Fetch active subscriptions for the user
-            $subscriptions = $user->activeSubscriptions();
+        $activeSubscription = Subscription::where('user_id', $user->id)
+            ->where('end_date', '>=', now())
+            ->with('plan')
+            ->orderBy('created_at', 'desc')
+            ->first();
 
-            return response()->json([
-                'status' => 200,
-                'active_subscriptions' => $subscriptions
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'error' => 'An error occurred while fetching active subscriptions'
-            ], 500);
-        }
+        return response()->json([
+            'status' => 200,
+            'active_subscription' => $activeSubscription
+        ], 200);
+    } catch (Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'error' => 'An error occurred while fetching active subscription'
+        ], 500);
     }
+}
+
 
 
     public function subscriptionHistory()

@@ -65,7 +65,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('borrowed-books-count', [AuthController::class, 'borrowedBooksCount']);
     Route::get('returned-books-count', [AuthController::class, 'returnedBooksCount']);
 
-    Route::post('subscribe/{planId}', [SubscriptionController::class, 'subscribe']);
+    Route::post('subscribe/{id}', [SubscriptionController::class, 'subscribe']);
     Route::get('subscriptions', [SubscriptionController::class, 'activeSubscriptions']);
     Route::get('subscriptions/history', [SubscriptionController::class, 'subscriptionHistory']);
 });
