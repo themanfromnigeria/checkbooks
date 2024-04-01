@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\LendingController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\AccessLevelController;
 use App\Http\Controllers\Api\SubscriptionController;
 
 /*
@@ -35,15 +36,23 @@ Route::middleware('auth:sanctum', 'admin.author.access')->group(function () {
 
 // Authenticated  admins
 Route::middleware(['auth:sanctum', 'admin.access'])->group(function () {
+    // Plans
     Route::post('add-plans', [PlanController::class, 'store']);
     Route::post('plans/{id}', [PlanController::class, 'update']);
     Route::delete('plans/{id}', [PlanController::class, 'destroy']);
 
+    // Users
     Route::get('users', [UserController::class, 'index']);
     Route::post('add-users', [UserController::class, 'store']);
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::post('users/{id}', [UserController::class, 'update']);
     Route::delete('users/{id}', [UserController::class, 'destroy']);
+
+    // Access level
+    Route::get('access-levels', [AccessLevelController::class, 'index']);
+    Route::post('add-access-levels', [AccessLevelController::class, 'store']);
+    Route::post('access-levels/{id}', [AccessLevelController::class, 'update']);
+    Route::delete('access-levels/{id}', [AccessLevelController::class, 'destroy']);
 });
 
 // Public routes accessible to all users
