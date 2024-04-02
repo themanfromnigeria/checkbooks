@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Profile;
+use App\Models\AccessLevel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -92,11 +93,51 @@ class ProfileController extends Controller
 
         $user->profile()->save($profile);
 
+
+        $accessLevel = $this->determineAccessLevel($profile->age, $user->borrowing_points);
+
+        // Assign access level to user
+        if ($accessLevel) {
+            $user->access_level_id = $accessLevel->id;
+        } else {
+            $user->access_level_id = null;
+        }
+
+        $user->save();
+
+
+
         return response()->json([
             'message' => 'Profile updated successfully',
             'profile' => $profile,
         ]);
     }
+
+
+    protected function determineAccessLevel($age, $borrowingPoints)
+    {
+        if ($age >= 7 && $age <= 15) {
+            if ($borrowingPoints == 0) {
+                return AccessLevel::where('name', 'Children')->first();
+            }
+        } elseif ($age >= 15 && $age <= 24) {
+            if ($borrowingPoints <= 9) {
+                return AccessLevel::where('name', 'Youth')->first();
+            } elseif ($borrowingPoints >= 10 && $borrowingPoints <= 14) {
+                return AccessLevel::where('name', 'Children Exclusive')->first();
+            } else{
+                return AccessLevel::where('name', 'Youth Exclusive')->first();
+            }
+        } elseif ($age >= 25 && $age <= 49) {
+            if ($borrowingPoints <= 19) {
+                return AccessLevel::where('name', 'Adult')->first();
+            } elseif ($borrowingPoints >= 20) {
+                return AccessLevel::where('name', 'Adult Exclusive')->first();
+            }
+        }
+        return null;
+    }
+
 
 
     /**

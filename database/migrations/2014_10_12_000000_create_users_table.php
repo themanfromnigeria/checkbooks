@@ -20,6 +20,8 @@ return new class extends Migration
             // $table->json('role')->nullable()->comment('0: user, 1: author, 2: admin');
             $table->integer('borrowing_points')->default(0); // Track borrowing points
             $table->enum('status', ['active', 'inactive'])->default('active')->comment('active, inactive');
+            $table->unsignedBigInteger('access_level_id')->nullable();
+            $table->foreign('access_level_id')->references('id')->on('access_levels')->onDelete('cascade');
             $table->rememberToken();
             $table->timestamps();
         });

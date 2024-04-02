@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Models\Role;
 use App\Models\Author;
 use App\Models\Profile;
+use App\Models\AccessLevel;
 use App\Models\Subscription;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
@@ -24,7 +25,8 @@ class User extends Authenticatable
     protected $fillable = [
         'email',
         'password',
-        'role'
+        'role',
+        'access_level'
     ];
 
     /**
@@ -96,4 +98,8 @@ class User extends Authenticatable
         return $this->subscriptions()->where('end_date', '<', now())->get();
     }
 
+    public function accessLevel()
+    {
+        return $this->belongsTo(AccessLevel::class);
+    }
 }
