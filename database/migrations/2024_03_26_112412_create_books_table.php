@@ -25,6 +25,8 @@ return new class extends Migration
             $table->tinyInteger('status')->default(0)->comment('0: active, 1: inactive');
             $table->enum('is_borrowed', ['borrowed', 'available'])->default('available')->comment('Borrowing status of the book'); //Track lending status. Unique by book
             // $table->boolean('is_borrowed')->default(false);
+            $table->unsignedBigInteger('access_level_id')->nullable();
+            $table->foreign('access_level_id')->references('id')->on('access_levels')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });

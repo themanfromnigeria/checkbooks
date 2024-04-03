@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Book;
 use App\Models\User;
 use App\Models\Lending;
+use App\Models\AccessLevel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
@@ -58,6 +59,9 @@ class BookController extends Controller
             // Create a new book with the validated data
             $book = Book::create($validatedData);
 
+            // Just added the access level...
+            $book->accessLevels()->attach($validatedData['access_level_id']);
+
             return response()->json([
                 'status' => 200,
                 'message' => 'Book added successfully',
@@ -98,6 +102,9 @@ class BookController extends Controller
 
             $book = Book::findOrFail($id);
             $book->update($validatedData);
+
+             // Update the id in the access_level_book table
+            $book->accessLevels()->sync([$validatedData['access_level_id']]);
 
             return response()->json([
                 'status' => 200,
@@ -140,6 +147,53 @@ class BookController extends Controller
         }
     }
 
+    // public function borrowBook(Request $request, $id)
+    // {
+    //     // Find the book by ID
+    //     $book = Book::findOrFail($id);
+
+    //     // Check if the user is authenticated and retrieve the user ID
+    //     $userId = Auth::id();
+    //     if (!$userId) {
+    //         return response()->json([
+    //             'status' => 401,
+    //             'error' => 'User is not authenticated'
+    //         ], 401);
+    //     }
+
+    //     // Check if the book is available for borrowing
+
+    //     if ($book->is_borrowed != 'borrowed') {
+
+    //         // Calculate the due date, 7 days from the current date
+    //         $dueDate = Carbon::now()->addDays(7);
+
+    //         // Create a lending record
+    //         $lending = new Lending();
+    //         $lending->user_id = Auth::id();
+    //         $lending->book_id = $book->id;
+    //         $lending->borrowed_at = now();
+    //         $lending->due_at = $dueDate;
+    //         $lending->save();
+
+    //         // Update the book's is_borrowed field to 'borrowed'
+    //         $book->update(['is_borrowed' => 'borrowed']);
+
+    //         return response()->json([
+    //             'status' => 200,
+    //             'message' => 'Book borrowed successfully',
+    //             'book' => $book
+    //         ], 200);
+    //     }
+    //     else {
+    //         return response()->json([
+    //             'status' => 400,
+    //             'error' => 'Book is already borrowed!!'
+    //         ], 400);
+    //     }
+    // }
+
+
     public function borrowBook(Request $request, $id)
     {
         // Find the book by ID
@@ -155,15 +209,40 @@ class BookController extends Controller
         }
 
         // Check if the book is available for borrowing
+        if ($book->is_borrowed == 'borrowed') {
+            return response()->json([
+                'status' => 400,
+                'error' => 'Book is already borrowed!!'
+            ], 400);
+        }
 
-        if ($book->is_borrowed != 'borrowed') {
+        // Retrieve the user's access level based on their age and lending points
+        $user = User::findOrFail($userId);
+        $userAccessLevel = $this->determineAccessLevel($user->profile->age, $user->borrowing_points);
 
+
+        // Retrieve the access levels associated with the book
+        $bookAccessLevels = $book->accessLevels()->get();
+
+        // Compare the user's access level with the access levels required by the book
+        $isAllowedToBorrow = false;
+        foreach ($bookAccessLevels as $accessLevel) {
+            if ($userAccessLevel->id == $accessLevel->id) {
+                $isAllowedToBorrow = true;
+                break;
+            }
+        }
+        \Log::info($userAccessLevel->id);
+        \Log::info($bookAccessLevels);
+
+        // If the user's access level matches one of the access levels required by the book, allow borrowing
+        if ($isAllowedToBorrow) {
             // Calculate the due date, 7 days from the current date
             $dueDate = Carbon::now()->addDays(7);
 
             // Create a lending record
             $lending = new Lending();
-            $lending->user_id = Auth::id();
+            $lending->user_id = $userId;
             $lending->book_id = $book->id;
             $lending->borrowed_at = now();
             $lending->due_at = $dueDate;
@@ -177,12 +256,38 @@ class BookController extends Controller
                 'message' => 'Book borrowed successfully',
                 'book' => $book
             ], 200);
-        }
-        else {
+        } else {
             return response()->json([
-                'status' => 400,
-                'error' => 'Book is already borrowed!!'
-            ], 400);
+                'status' => 403,
+                'error' => 'User does not have access to borrow this book'
+            ], 403);
         }
     }
+
+
+
+    protected function determineAccessLevel($age, $borrowingPoints)
+    {
+        if ($age >= 7 && $age <= 15) {
+            if ($borrowingPoints == 0) {
+                return AccessLevel::where('name', 'Children')->first();
+            }
+        } elseif ($age >= 15 && $age <= 24) {
+            if ($borrowingPoints <= 9) {
+                return AccessLevel::where('name', 'Youth')->first();
+            } elseif ($borrowingPoints >= 10 && $borrowingPoints <= 14) {
+                return AccessLevel::where('name', 'Children Exclusive')->first();
+            } else{
+                return AccessLevel::where('name', 'Youth Exclusive')->first();
+            }
+        } elseif ($age >= 25 && $age <= 49) {
+            if ($borrowingPoints <= 19) {
+                return AccessLevel::where('name', 'Adult')->first();
+            } elseif ($borrowingPoints >= 20) {
+                return AccessLevel::where('name', 'Adult Exclusive')->first();
+            }
+        }
+        return null;
+    }
+
 }

@@ -6,6 +6,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\Lending;
 use App\Models\Category;
+use App\Models\AccessLevel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -25,6 +26,7 @@ class Book extends Model
         'price',
         'status',
         'is_borrowed',
+        'access_level_id',
     ];
 
     public function tags()
@@ -52,5 +54,10 @@ class Book extends Model
     public function isBorrowed()
     {
         return $this->lendings()->whereNull('returned_at')->exists();
+    }
+
+    public function accessLevels()
+    {
+        return $this->belongsToMany(AccessLevel::class);
     }
 }

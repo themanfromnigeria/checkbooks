@@ -32,6 +32,7 @@ class StoreBookRequest extends FormRequest
             'price' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:0,1',
             'is_borrowed' => 'nullable|in:available,borrowed',
+            'access_level_id' => 'required|integer|min:0',
         ];
     }
 }
