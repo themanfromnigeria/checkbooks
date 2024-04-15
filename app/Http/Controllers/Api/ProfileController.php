@@ -38,6 +38,8 @@ class ProfileController extends Controller
     /**
      * Display the specified resource.
      */
+
+     // I want to remove this profile
     public function show()
     {
         try {
